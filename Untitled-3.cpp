@@ -302,14 +302,18 @@ int main () {
     printf("텍스트 해싱 툴 v0.0.1\nSHA1로 변환하려면 '1', MD5로 변환하려면 '2'를 입력하십시오...");
     scanf("%d", &type);
 
-    if (type=1) {
-
+    if (type==1) {
+        printf("got 1!");
+        return 1;
     }
-    else if (type=2) {
-
+    
+    else if (type==2) {
+        printf("Got 2!");
+        return 2;
     }
+    
     else {
-        printf("유효한 정수가 아닙니다. 한 자리의 숫자 '1' 혹은 '1'를 입력했는지 확인하여 주십시오\n오류 코드 400으로 프로세스 종료함");
+        printf("유효한 정수가 아닙니다. 한 자리의 숫자 '1' 혹은 '2'를 입력했는지 확인하여 주십시오\n\n종료 코드 400으로 프로세스 종료함");
         return 400;
     }
 }
