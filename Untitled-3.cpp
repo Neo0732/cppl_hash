@@ -71,12 +71,12 @@ private:
         for (int i=0;i<16;++i) {
             w[i]=(buffer[i*4]<<24) | (buffer[i*4+1]<<16) |
                    (buffer[i*4+2]<<8) | buffer[i*4+3];
-        } // 4바이트씩 묶음, 16개짜리 32비트 형식으로 변환
+        }
         for (int i=16;i<80;++i) {
             w[i]=rotl(w[i-3]^w[i-8]^w[i-14]^w[i-16],1);
-        }
+        } // 4바이트씩 묶음, 16개짜리 32비트 형식으로 변환
 
-        uint32_t a=digest[0], b=digest[1], c=digest[2], d=digest[3], e=digest[4];
+        uint32_t a=digest[0], b=digest[1], c=digest[2], d=digest[3], e=digest[4]; // SHA1 메인 루프(80라운드)
 
         for (int i=0;i<80;++i) {
             uint32_t f, k;
@@ -100,6 +100,7 @@ private:
             b=a;
             a=temp;
         }
+        // a~e 임시변수 + f, k 상수 => 해시 생성 -> 다이제스트 함숫값 배열에 쌓아 저장
 
         digest[0]+=a;
         digest[1]+=b;
@@ -108,13 +109,13 @@ private:
         digest[4]+=e;
     }
 
-    uint32_t rotl(uint32_t value, int bits) {
-        return (value<<bits) | (value>>(32 - bits));
+    uint32_t rotl(uint32_t value, int bits) { // 최종 32비트 결괏값 -> 왼쪽으로 비트시프트 처리해 옮기기
+        return (value<<bits) | (value>>(32 - bits)); // 최종 SHA1 해시 반환
     }
 }
 ;
 
-class MD5 {
+class MD5 { // MD5 처리부 정의
 private:
     // MD5 알고리즘에서 사용하는 초기 해시값 (little-endian)
     uint32_t h[4] = {
