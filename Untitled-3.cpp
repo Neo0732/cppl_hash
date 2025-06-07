@@ -8,108 +8,108 @@
 #include <cstring>
 #include <cstdint>
 
-class SHA1 {
+class SHA1 { //SHA1 처리부 정의
 public:
-    SHA1() { reset(); }
+    SHA1() {reset();}
 
-    void update(const std::string& s) {
-        for (char c : s) {
-            update((uint8_t)c);
+    void update(const std::string&s) { // 입력값 받아오기
+        for (char c:s) { // 입력값만큼 반복:
+            update((uint8_t)c); // BITE 단위로 분할
         }
     }
 
-    void update(uint8_t data) {
-        buffer[bufferIndex++] = data;
-        messageLength += 8;
-        if (bufferIndex == 64) {
+    void update(uint8_t data) { // 위에서 분할한 값 받아오기
+        buffer[bufferIndex++]=data; // 받아서 버퍼로 쏘기, 인덱스에 버퍼 위치 저장
+        messageLength+=8; // 전체 입력값의 비트값 추적
+        if (bufferIndex==64) { // 버퍼 가득 찼다면?
             processBlock();
-            bufferIndex = 0;
+            bufferIndex=0; // 버퍼 비우기
         }
     }
 
-    std::string final() {
-        buffer[bufferIndex++] = 0x80;
-        if (bufferIndex > 56) {
-            while (bufferIndex < 64) buffer[bufferIndex++] = 0x00;
+    std::string final() { // 패딩절차 및 해시 반환부
+        buffer[bufferIndex++]=0x80; // 원문에 끝부분 표시
+        if (bufferIndex>56) { // 버퍼 남은공간 56 넘으면:
+            while (bufferIndex<64) buffer[bufferIndex++]=0x00;
             processBlock();
-            bufferIndex = 0;
+            bufferIndex=0; // 64바이트까지 0으로 치환, 프로세스 블락 호출해 새로고침
         }
-        while (bufferIndex < 56) buffer[bufferIndex++] = 0x00;
+        while (bufferIndex<56) buffer[bufferIndex++]=0x00; // 다시 버퍼 56바이트까지 0으로 채운 후 마지막 8자리에 원문 길이를 빅-엔디언으로 저장
 
-        uint64_t len = messageLength;
-        for (int i = 7; i >= 0; --i) {
-            buffer[bufferIndex++] = (uint8_t)((len >> (i * 8)) & 0xFF);
+        uint64_t len=messageLength;
+        for (int i=7;i>=0;--i) {
+            buffer[bufferIndex++]=(uint8_t)((len>>(i*8))&0xFF);
         }
-        processBlock();
+        processBlock(); // 패딩 끝내고 프로세스 블락 함수 호출 -> 새로고침
 
         std::ostringstream result;
-        for (int i = 0; i < 5; ++i) {
-            result << std::hex << std::setw(8) << std::setfill('0') << digest[i];
+        for (int i=0;i<5;++i) {
+            result<<std::hex<<std::setw(8)<<std::setfill('0')<<digest[i]; // 5개의 32비트 해시값 -> 8자리의 16진수 문자열 변환
         }
-        reset();
+        reset(); // 내부 초기화
         return result.str();
     }
 
 private:
-    uint32_t digest[5];
-    uint8_t buffer[64];
-    size_t bufferIndex;
-    uint64_t messageLength;
+    uint32_t digest[5]; // SHA1 160비트 해시 저장소
+    uint8_t buffer[64]; // 원문 512비트 임시 저장 버퍼
+    size_t bufferIndex; // 버퍼에 저장된 데이터 주소/위치
+    uint64_t messageLength; // 원문 메시지 비트 길이 추적
 
-    void reset() {
-        digest[0] = 0x67452301;
-        digest[1] = 0xEFCDAB89;
-        digest[2] = 0x98BADCFE;
-        digest[3] = 0x10325476;
-        digest[4] = 0xC3D2E1F0;
-        bufferIndex = 0;
-        messageLength = 0;
+    void reset() { // 내부 초기화 함수 정의
+        digest[0]=0x67452301; // SHA1 표준 약속된 함숫값
+        digest[1]=0xEFCDAB89; // SHA1 표준 약속된 함숫값
+        digest[2]=0x98BADCFE; // SHA1 표준 약속된 함숫값
+        digest[3]=0x10325476; // SHA1 표준 약속된 함숫값
+        digest[4]=0xC3D2E1F0; // SHA1 표준 약속된 함숫값
+        bufferIndex=0; // 버퍼 데이터 위칫값 초기화
+        messageLength=0; // 비트 길잇값 초기화
     }
 
-    void processBlock() {
+    void processBlock() { // 프로세스 블락 함수 정의 => 버퍼 데이터 -> SHA1 해시
         uint32_t w[80];
-        for (int i = 0; i < 16; ++i) {
-            w[i] = (buffer[i * 4] << 24) | (buffer[i * 4 + 1] << 16) |
-                   (buffer[i * 4 + 2] << 8) | buffer[i * 4 + 3];
-        }
-        for (int i = 16; i < 80; ++i) {
-            w[i] = rotl(w[i - 3] ^ w[i - 8] ^ w[i - 14] ^ w[i - 16], 1);
+        for (int i=0;i<16;++i) {
+            w[i]=(buffer[i*4]<<24) | (buffer[i*4+1]<<16) |
+                   (buffer[i*4+2]<<8) | buffer[i*4+3];
+        } // 4바이트씩 묶음, 16개짜리 32비트 형식으로 변환
+        for (int i=16;i<80;++i) {
+            w[i]=rotl(w[i-3]^w[i-8]^w[i-14]^w[i-16],1);
         }
 
-        uint32_t a = digest[0], b = digest[1], c = digest[2], d = digest[3], e = digest[4];
+        uint32_t a=digest[0], b=digest[1], c=digest[2], d=digest[3], e=digest[4];
 
-        for (int i = 0; i < 80; ++i) {
+        for (int i=0;i<80;++i) {
             uint32_t f, k;
-            if (i < 20) {
-                f = (b & c) | ((~b) & d);
-                k = 0x5A827999;
-            } else if (i < 40) {
-                f = b ^ c ^ d;
-                k = 0x6ED9EBA1;
-            } else if (i < 60) {
-                f = (b & c) | (b & d) | (c & d);
-                k = 0x8F1BBCDC;
+            if (i<20) {
+                f=(b&c) | ((~b)&d);
+                k=0x5A827999;
+            } else if (i<40) {
+                f=b^c^d;
+                k=0x6ED9EBA1;
+            } else if (i<60) {
+                f=(b&c) | (b&d) | (c&d);
+                k=0x8F1BBCDC;
             } else {
-                f = b ^ c ^ d;
-                k = 0xCA62C1D6;
+                f=b^c^d;
+                k=0xCA62C1D6;
             }
-            uint32_t temp = rotl(a, 5) + f + e + k + w[i];
-            e = d;
-            d = c;
-            c = rotl(b, 30);
-            b = a;
-            a = temp;
+            uint32_t temp=rotl(a, 5)+f+e+k+w[i];
+            e=d;
+            d=c;
+            c=rotl(b, 30);
+            b=a;
+            a=temp;
         }
 
-        digest[0] += a;
-        digest[1] += b;
-        digest[2] += c;
-        digest[3] += d;
-        digest[4] += e;
+        digest[0]+=a;
+        digest[1]+=b;
+        digest[2]+=c;
+        digest[3]+=d;
+        digest[4]+=e;
     }
 
     uint32_t rotl(uint32_t value, int bits) {
-        return (value << bits) | (value >> (32 - bits));
+        return (value<<bits) | (value>>(32 - bits));
     }
 }
 ;
@@ -303,8 +303,17 @@ int main () {
     scanf("%d", &type);
 
     if (type==1) {
-        printf("got 1!");
-        return 1;
+        printf("\nSHA1 모드입니다.");
+        SHA1 sha1;
+        char UserInputStr[1024];
+        std::cout<<"SHA1으로 해시 처리할 1024자 이하의 문자열을 입력하십시오... ";
+        std::scanf("%1023s", UserInputStr);
+        std::string inputStr(UserInputStr);
+        sha1.update(inputStr);
+        std::string hash=sha1.final();
+        std::cout<<"\nSHA1 해시입니다: "<<hash<<std::endl;
+        printf("\n반환 코드 200(OK)로 프로그램 종료함");
+        return 200;
     }
     
     else if (type==2) {
