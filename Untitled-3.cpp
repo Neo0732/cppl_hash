@@ -110,7 +110,7 @@ private:
     }
 
     uint32_t rotl(uint32_t value, int bits) { // 최종 32비트 결괏값 -> 왼쪽으로 비트시프트 처리해 옮기기
-        return (value<<bits) | (value>>(32 - bits)); // 최종 SHA1 해시 반환
+        return (value<<bits) | (value>>(32 - bits)); // --최종 SHA1 해시 반환--
     }
 }
 ;
