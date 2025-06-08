@@ -9,7 +9,7 @@
 #include <cstdint>
 
 class SHA1 { //SHA1 처리부 정의
-public:
+public: // 패딩+사전처리 등
     SHA1() {reset();}
 
     void update(const std::string&s) { // 입력값 받아오기
@@ -50,7 +50,7 @@ public:
         return result.str();
     }
 
-private:
+private: // 해시 처리+반환
     uint32_t digest[5]; // SHA1 160비트 해시 저장소
     uint8_t buffer[64]; // 원문 512비트 임시 저장 버퍼
     size_t bufferIndex; // 버퍼에 저장된 데이터 주소/위치
@@ -80,16 +80,16 @@ private:
 
         for (int i=0;i<80;++i) {
             uint32_t f, k;
-            if (i<20) {
+            if (i<20) { // 루프1
                 f=(b&c) | ((~b)&d);
                 k=0x5A827999;
-            } else if (i<40) {
+            } else if (i<40) { // 루프2
                 f=b^c^d;
                 k=0x6ED9EBA1;
-            } else if (i<60) {
+            } else if (i<60) { // 루프3
                 f=(b&c) | (b&d) | (c&d);
                 k=0x8F1BBCDC;
-            } else {
+            } else { // 루프4
                 f=b^c^d;
                 k=0xCA62C1D6;
             }
@@ -116,27 +116,23 @@ private:
 ;
 
 class MD5 { // MD5 처리부 정의
-private:
-    // MD5 알고리즘에서 사용하는 초기 해시값 (little-endian)
-    uint32_t h[4] = {
+private: // 패딩+사전처리
+    uint32_t h[4] = { // MD5 알고리즘 초기 해시값 리틀-엔디언으로 정의
         0x67452301,
         0xEFCDAB89,
         0x98BADCFE,
         0x10325476
     };
     
-    // 각 라운드에서 사용하는 시프트 값들
-    static const int s[64];
+    static const int s[64]; // 변환 라운드에서 사용하는 시프트 값
     
-    // 각 라운드에서 사용하는 상수값들 (sin 함수 기반)
-    static const uint32_t K[64];
+    static const uint32_t K[64]; // 변환 라운드에서 사용하는 상수값
     
-    // 좌측 회전 연산 (비트 시프트)
     uint32_t leftRotate(uint32_t value, int shift) {
         return (value << shift) | (value >> (32 - shift));
     }
-    
-    // MD5의 핵심 함수들 - 각 라운드에서 사용
+    // 왼쪽 이전 비트시프트 처리
+
     uint32_t F(uint32_t x, uint32_t y, uint32_t z) {
         return (x & y) | (~x & z);
     }
@@ -152,55 +148,52 @@ private:
     uint32_t I(uint32_t x, uint32_t y, uint32_t z) {
         return y ^ (x | ~z);
     }
+    // 각 라운드에 활용되는 MD5의 주사용 함수
     
-    // 메시지를 512비트 블록으로 패딩
+    // 원문을 512비트 블록으로 패딩
     std::vector<uint8_t> padMessage(const std::string& message) {
         std::vector<uint8_t> padded;
         
-        // 원본 메시지를 바이트 배열로 변환
         for (char c : message) {
             padded.push_back(static_cast<uint8_t>(c));
         }
+        // 원문을 바이트 배열로 변환
         
-        // 메시지 길이를 비트 단위로 저장 (패딩 전)
         uint64_t originalLength = message.length() * 8;
+        // 원문 길이를 비트 단위로 저장
         
-        // 패딩: 먼저 1비트(0x80) 추가
-        padded.push_back(0x80);
+        padded.push_back(0x80); // 패딩 위해 먼저 1비트 추가
         
-        // 메시지 길이가 512비트 블록에서 448비트가 될 때까지 0 패딩
-        // (마지막 64비트는 원본 길이 정보용)
         while (padded.size() % 64 != 56) {
             padded.push_back(0x00);
         }
+        // 원문 길이 512비트 -> 448비트가 될 때까지 0으로 패딩, 끝 64비트는 원문 길이 저장
         
-        // 원본 메시지 길이를 64비트 little-endian으로 추가
         for (int i = 0; i < 8; i++) {
             padded.push_back(static_cast<uint8_t>(originalLength >> (i * 8)));
         }
-        
+        // 원문 길이를 64비트 리틀-엔디안 형식으로 추가
+
         return padded;
     }
     
-public:
-    // 메인 해싱 함수
+public: // 해시 처리+반환
     std::string hash(const std::string& message) {
-        // 1. 메시지 패딩
         std::vector<uint8_t> paddedMessage = padMessage(message);
-        
-        // 2. 512비트(64바이트) 블록 단위로 처리
+        // 패딩 결괏값 불러오기
+
         for (size_t i = 0; i < paddedMessage.size(); i += 64) {
             processBlock(&paddedMessage[i]);
         }
+        // 512비트 단위로 원문 처리
         
-        // 3. 최종 해시값을 16진수 문자열로 변환
         return toHexString();
+        // 최종 해시값을 16진수 문자열로
     }
     
-private:
-    // 각 512비트 블록을 처리하는 핵심 함수
+private: // 512비트 블록 처리
     void processBlock(const uint8_t* block) {
-        // 블록을 16개의 32비트 워드로 변환 (little-endian)
+        // 원문을 16개의 32비트 조각으로 변환
         uint32_t w[16];
         for (int i = 0; i < 16; i++) {
             w[i] = static_cast<uint32_t>(block[i * 4]) |
@@ -209,33 +202,28 @@ private:
                    (static_cast<uint32_t>(block[i * 4 + 3]) << 24);
         }
         
-        // 현재 해시값을 작업 변수에 복사
+        // 해시값을 주 변수에 복사
         uint32_t a = h[0], b = h[1], c = h[2], d = h[3];
         
-        // 4라운드, 각 라운드마다 16번의 연산 수행
+        // 4라운드 16회의 연산 수행, 루프당 다른 함수F,G와 인덱스 사용
         for (int i = 0; i < 64; i++) {
             uint32_t f, g;
             
-            // 라운드별로 다른 함수와 인덱스 사용
-            if (i < 16) {
-                // 라운드 1: F 함수 사용
+            if (i < 16) { // 루프1
                 f = F(b, c, d);
                 g = i;
-            } else if (i < 32) {
-                // 라운드 2: G 함수 사용
+            } else if (i < 32) { // 루프2
                 f = G(b, c, d);
                 g = (5 * i + 1) % 16;
-            } else if (i < 48) {
-                // 라운드 3: H 함수 사용
+            } else if (i < 48) { // 루프3
                 f = H(b, c, d);
                 g = (3 * i + 5) % 16;
-            } else {
-                // 라운드 4: I 함수 사용
+            } else { // 루프4
                 f = I(b, c, d);
                 g = (7 * i) % 16;
             }
             
-            // MD5의 핵심 연산: 덧셈, 회전, 재배치
+            // MD5 표준 마무리 연산(덧셈/회전/재배열)
             f = f + a + K[i] + w[g];
             a = d;
             d = c;
@@ -243,7 +231,7 @@ private:
             b = b + leftRotate(f, s[i]);
         }
         
-        // 이 블록의 결과를 누적 해시값에 더함
+        // 루프 결과를 해시값에 누적
         h[0] += a;
         h[1] += b;
         h[2] += c;
@@ -255,7 +243,7 @@ private:
         std::stringstream ss;
         ss << std::hex << std::setfill('0');
         
-        // little-endian 순서로 각 바이트를 16진수로 변환
+        // 리틀 엔디안 순서로 바이트를 16진수로 변환
         for (int i = 0; i < 4; i++) {
             for (int j = 0; j < 4; j++) {
                 ss << std::setw(2) << ((h[i] >> (j * 8)) & 0xFF);
@@ -266,20 +254,16 @@ private:
     }
 };
 
-// 정적 멤버 변수 정의
+// 정적 변수 정의
 const int MD5::s[64] = {
-    // 라운드 1의 시프트 값들
-    7, 12, 17, 22, 7, 12, 17, 22, 7, 12, 17, 22, 7, 12, 17, 22,
-    // 라운드 2의 시프트 값들
-    5,  9, 14, 20, 5,  9, 14, 20, 5,  9, 14, 20, 5,  9, 14, 20,
-    // 라운드 3의 시프트 값들
-    4, 11, 16, 23, 4, 11, 16, 23, 4, 11, 16, 23, 4, 11, 16, 23,
-    // 라운드 4의 시프트 값들
-    6, 10, 15, 21, 6, 10, 15, 21, 6, 10, 15, 21, 6, 10, 15, 21
+    7, 12, 17, 22, 7, 12, 17, 22, 7, 12, 17, 22, 7, 12, 17, 22, // 루프1
+    5,  9, 14, 20, 5,  9, 14, 20, 5,  9, 14, 20, 5,  9, 14, 20, // 루프2
+    4, 11, 16, 23, 4, 11, 16, 23, 4, 11, 16, 23, 4, 11, 16, 23, // 루프3
+    6, 10, 15, 21, 6, 10, 15, 21, 6, 10, 15, 21, 6, 10, 15, 21 // 루프4
 };
 
 const uint32_t MD5::K[64] = {
-    // sin 함수를 기반으로 한 상수값들 (2^32 * abs(sin(i+1)))
+    // sin 함수 기반 MD5 표준 상수값 (2^32 * abs(sin(i+1)))
     0xd76aa478, 0xe8c7b756, 0x242070db, 0xc1bdceee,
     0xf57c0faf, 0x4787c62a, 0xa8304613, 0xfd469501,
     0x698098d8, 0x8b44f7af, 0xffff5bb1, 0x895cd7be,
@@ -300,30 +284,38 @@ const uint32_t MD5::K[64] = {
 
 int main () {
     int type=0;
-    printf("텍스트 해싱 툴 v0.0.1\nSHA1로 변환하려면 '1', MD5로 변환하려면 '2'를 입력하십시오...");
+    printf("텍스트 해싱 툴 v0.0.1\nSHA1으로 변환하려면 '1', MD5로 변환하려면 '2'를 입력하십시오... ");
     scanf("%d", &type);
 
     if (type==1) {
-        printf("\nSHA1 모드입니다.");
+        printf("\n선택한 모드가 SHA1 모드입니다.");
         SHA1 sha1;
         char UserInputStr[1024];
-        std::cout<<"SHA1으로 해시 처리할 1024자 이하의 문자열을 입력하십시오... ";
+        std::cout<<"\nSHA1으로 해시 처리할 1024자 이하의 문자열을 입력하십시오... ";
         std::scanf("%1023s", UserInputStr);
         std::string inputStr(UserInputStr);
         sha1.update(inputStr);
         std::string hash=sha1.final();
         std::cout<<"\nSHA1 해시입니다: "<<hash<<std::endl;
-        printf("\n반환 코드 200(OK)로 프로그램 종료함");
+        printf("\n\n반환 코드 200(OK)로 프로그램 종료함");
         return 200;
     }
     
     else if (type==2) {
-        printf("Got 2!");
-        return 2;
+    printf("선택한 모드가 MD5 모드입니다.");
+    MD5 md5;
+    char UserInputStr[1024];
+    std::cout << "\nMD5로 해시 처리할 1024자 이하의 문자열을 입력하십시오... ";
+    std::scanf("%1023s", UserInputStr);
+    std::string inputStr(UserInputStr);
+    std::string hash = md5.hash(inputStr);
+    std::cout << "\nMD5 해시입니다: " << hash << std::endl;
+    printf("\n\n반환 코드 200(OK)로 프로그램 종료함");
+    return 200;
     }
     
     else {
-        printf("유효한 정수가 아닙니다. 한 자리의 숫자 '1' 혹은 '2'를 입력했는지 확인하여 주십시오\n\n종료 코드 400으로 프로세스 종료함");
+        printf("유효한 입력이 아닙니다.\n한 자리의 숫자 '1' 혹은 '2'를 입력했는지 확인하여 주십시오.\n\n종료 코드 404으로 프로세스 종료함");
         return 400;
     }
 }
