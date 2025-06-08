@@ -1,6 +1,6 @@
 #define ItIsFinal
 
-#include <iostream>
+#include <iostream> // C++ 헤더
 #include <string>
 #include <vector>
 #include <sstream>
@@ -14,7 +14,7 @@ public: // 패딩+사전처리 등
 
     void update(const std::string&s) { // 입력값 받아오기
         for (char c:s) { // 입력값만큼 반복:
-            update((uint8_t)c); // BITE 단위로 분할
+            update((uint8_t)c); // 바이트 단위로 분할
         }
     }
 
@@ -117,7 +117,7 @@ private: // 해시 처리+반환
 
 class MD5 { // MD5 처리부 정의
 private: // 패딩+사전처리
-    uint32_t h[4] = { // MD5 알고리즘 초기 해시값 리틀-엔디언으로 정의
+    uint32_t h[4]={ // MD5 알고리즘 초기 해시값 리틀-엔디언으로 정의
         0x67452301,
         0xEFCDAB89,
         0x98BADCFE,
@@ -129,24 +129,24 @@ private: // 패딩+사전처리
     static const uint32_t K[64]; // 변환 라운드에서 사용하는 상수값
     
     uint32_t leftRotate(uint32_t value, int shift) {
-        return (value << shift) | (value >> (32 - shift));
+        return (value<<shift) | (value>>(32-shift));
     }
     // 왼쪽 이전 비트시프트 처리
 
     uint32_t F(uint32_t x, uint32_t y, uint32_t z) {
-        return (x & y) | (~x & z);
+        return (x&y) | (~x&z);
     }
     
     uint32_t G(uint32_t x, uint32_t y, uint32_t z) {
-        return (x & z) | (y & ~z);
+        return (x&z) | (y&~z);
     }
     
     uint32_t H(uint32_t x, uint32_t y, uint32_t z) {
-        return x ^ y ^ z;
+        return x^y^z;
     }
     
     uint32_t I(uint32_t x, uint32_t y, uint32_t z) {
-        return y ^ (x | ~z);
+        return y^(x|~z);
     }
     // 각 라운드에 활용되는 MD5의 주사용 함수
     
@@ -159,18 +159,18 @@ private: // 패딩+사전처리
         }
         // 원문을 바이트 배열로 변환
         
-        uint64_t originalLength = message.length() * 8;
+        uint64_t originalLength=message.length()*8;
         // 원문 길이를 비트 단위로 저장
         
         padded.push_back(0x80); // 패딩 위해 먼저 1비트 추가
         
-        while (padded.size() % 64 != 56) {
+        while (padded.size()%64!=56) {
             padded.push_back(0x00);
         }
         // 원문 길이 512비트 -> 448비트가 될 때까지 0으로 패딩, 끝 64비트는 원문 길이 저장
         
-        for (int i = 0; i < 8; i++) {
-            padded.push_back(static_cast<uint8_t>(originalLength >> (i * 8)));
+        for (int i=0;i<8;i++) {
+            padded.push_back(static_cast<uint8_t>(originalLength>>(i*8)));
         }
         // 원문 길이를 64비트 리틀-엔디안 형식으로 추가
 
@@ -179,10 +179,10 @@ private: // 패딩+사전처리
     
 public: // 해시 처리+반환
     std::string hash(const std::string& message) {
-        std::vector<uint8_t> paddedMessage = padMessage(message);
+        std::vector<uint8_t> paddedMessage=padMessage(message);
         // 패딩 결괏값 불러오기
 
-        for (size_t i = 0; i < paddedMessage.size(); i += 64) {
+        for (size_t i=0;i<paddedMessage.size();i+=64) {
             processBlock(&paddedMessage[i]);
         }
         // 512비트 단위로 원문 처리
@@ -195,58 +195,58 @@ private: // 512비트 블록 처리
     void processBlock(const uint8_t* block) {
         // 원문을 16개의 32비트 조각으로 변환
         uint32_t w[16];
-        for (int i = 0; i < 16; i++) {
-            w[i] = static_cast<uint32_t>(block[i * 4]) |
-                   (static_cast<uint32_t>(block[i * 4 + 1]) << 8) |
-                   (static_cast<uint32_t>(block[i * 4 + 2]) << 16) |
-                   (static_cast<uint32_t>(block[i * 4 + 3]) << 24);
+        for (int i=0;i<16;i++) {
+            w[i] = static_cast<uint32_t>(block[i*4]) |
+                   (static_cast<uint32_t>(block[i*4+1])<<8) |
+                   (static_cast<uint32_t>(block[i*4+2])<<16) |
+                   (static_cast<uint32_t>(block[i*4+3])<<24);
         }
         
         // 해시값을 주 변수에 복사
-        uint32_t a = h[0], b = h[1], c = h[2], d = h[3];
+        uint32_t a=h[0], b=h[1], c=h[2], d=h[3];
         
         // 4라운드 16회의 연산 수행, 루프당 다른 함수F,G와 인덱스 사용
-        for (int i = 0; i < 64; i++) {
+        for (int i=0;i<64;i++) {
             uint32_t f, g;
             
-            if (i < 16) { // 루프1
-                f = F(b, c, d);
-                g = i;
-            } else if (i < 32) { // 루프2
-                f = G(b, c, d);
-                g = (5 * i + 1) % 16;
-            } else if (i < 48) { // 루프3
-                f = H(b, c, d);
-                g = (3 * i + 5) % 16;
+            if (i<16) { // 루프1
+                f=F(b, c, d);
+                g=i;
+            } else if (i<32) { // 루프2
+                f=G(b, c, d);
+                g=(5*i+1)%16;
+            } else if (i<48) { // 루프3
+                f=H(b, c, d);
+                g=(3*i+5)%16;
             } else { // 루프4
-                f = I(b, c, d);
-                g = (7 * i) % 16;
+                f=I(b, c, d);
+                g=(7*i)%16;
             }
             
             // MD5 표준 마무리 연산(덧셈/회전/재배열)
-            f = f + a + K[i] + w[g];
-            a = d;
-            d = c;
-            c = b;
-            b = b + leftRotate(f, s[i]);
+            f=f+a+K[i]+w[g];
+            a=d;
+            d=c;
+            c=b;
+            b=b+leftRotate(f, s[i]);
         }
         
         // 루프 결과를 해시값에 누적
-        h[0] += a;
-        h[1] += b;
-        h[2] += c;
-        h[3] += d;
+        h[0]+=a;
+        h[1]+=b;
+        h[2]+=c;
+        h[3]+=d;
     }
     
     // 최종 해시값을 16진수 문자열로 변환
     std::string toHexString() {
         std::stringstream ss;
-        ss << std::hex << std::setfill('0');
+        ss<<std::hex<<std::setfill('0');
         
         // 리틀 엔디안 순서로 바이트를 16진수로 변환
-        for (int i = 0; i < 4; i++) {
-            for (int j = 0; j < 4; j++) {
-                ss << std::setw(2) << ((h[i] >> (j * 8)) & 0xFF);
+        for (int i=0;i<4;i++) {
+            for (int j=0;j<4;j++) {
+                ss<<std::setw(2)<<((h[i]>>(j*8))&0xFF);
             }
         }
         
@@ -254,7 +254,7 @@ private: // 512비트 블록 처리
     }
 };
 
-// 정적 변수 정의
+// MD5 표준 정적변수 정의
 const int MD5::s[64] = {
     7, 12, 17, 22, 7, 12, 17, 22, 7, 12, 17, 22, 7, 12, 17, 22, // 루프1
     5,  9, 14, 20, 5,  9, 14, 20, 5,  9, 14, 20, 5,  9, 14, 20, // 루프2
@@ -263,7 +263,7 @@ const int MD5::s[64] = {
 };
 
 const uint32_t MD5::K[64] = {
-    // sin 함수 기반 MD5 표준 상수값 (2^32 * abs(sin(i+1)))
+    // sin 기반 MD5 표준 상수값 (2^32*abs(sin(i+1)))
     0xd76aa478, 0xe8c7b756, 0x242070db, 0xc1bdceee,
     0xf57c0faf, 0x4787c62a, 0xa8304613, 0xfd469501,
     0x698098d8, 0x8b44f7af, 0xffff5bb1, 0x895cd7be,
@@ -297,25 +297,25 @@ int main () {
         sha1.update(inputStr);
         std::string hash=sha1.final();
         std::cout<<"\nSHA1 해시입니다: "<<hash<<std::endl;
-        printf("\n\n반환 코드 200(OK)로 프로그램 종료함");
+        printf("\n\n반환 코드 200(OK)으로 프로그램 종료함");
         return 200;
     }
     
     else if (type==2) {
-    printf("선택한 모드가 MD5 모드입니다.");
-    MD5 md5;
-    char UserInputStr[1024];
-    std::cout << "\nMD5로 해시 처리할 1024자 이하의 문자열을 입력하십시오... ";
-    std::scanf("%1023s", UserInputStr);
-    std::string inputStr(UserInputStr);
-    std::string hash = md5.hash(inputStr);
-    std::cout << "\nMD5 해시입니다: " << hash << std::endl;
-    printf("\n\n반환 코드 200(OK)로 프로그램 종료함");
-    return 200;
+            printf("\n선택한 모드가 MD5 모드입니다.");
+            MD5 md5;
+            char UserInputStr[1024];
+            std::cout << "\nMD5로 해시 처리할 1024자 이하의 문자열을 입력하십시오... ";
+            std::scanf("%1023s", UserInputStr);
+            std::string inputStr(UserInputStr);
+            std::string hash = md5.hash(inputStr);
+            std::cout << "\nMD5 해시입니다: "<< hash << std::endl;
+            printf("\n\n반환 코드 200(OK)으로 프로그램 종료함");
+            return 200;
     }
     
     else {
-        printf("유효한 입력이 아닙니다.\n한 자리의 숫자 '1' 혹은 '2'를 입력했는지 확인하여 주십시오.\n\n종료 코드 404으로 프로세스 종료함");
+        printf("\n유효한 입력이 아닙니다.\n한 자리의 숫자 '1' 혹은 '2'를 입력했는지 확인하여 주십시오.\n\n종료 코드 400(BadRequest)으로 프로세스 종료함");
         return 400;
     }
 }
